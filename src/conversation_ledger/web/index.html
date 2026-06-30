@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Conversation Ledger Shell</title>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <div class="eyebrow">Conversation Ledger</div>
+          <h1>Archive Shell</h1>
+          <p class="subtitle">Browse saved chats, filter by source taxonomy, search content, and inspect evidence without leaving one window.</p>
+        </div>
+        <div class="hero-actions">
+          <button id="reload-tree" class="ghost-button">Reload Tree</button>
+          <button id="load-day-context" class="primary-button">Load Day Context</button>
+        </div>
+      </header>
+
+      <section class="toolbar">
+        <div class="control-grid">
+          <label>
+            <span>Project</span>
+            <select id="filter-project"></select>
+          </label>
+          <label>
+            <span>Family</span>
+            <select id="filter-family"></select>
+          </label>
+          <label>
+            <span>Product</span>
+            <select id="filter-product"></select>
+          </label>
+          <label>
+            <span>Vendor</span>
+            <select id="filter-vendor"></select>
+          </label>
+          <label>
+            <span>Surface</span>
+            <select id="filter-surface"></select>
+          </label>
+          <label>
+            <span>Day</span>
+            <select id="filter-day"></select>
+          </label>
+        </div>
+
+        <div class="search-row">
+          <label class="scope-field">
+            <span>Search Scope</span>
+            <select id="search-scope">
+              <option value="all">All data</option>
+              <option value="project">One project</option>
+              <option value="family">One family</option>
+              <option value="project-family">One family inside one project</option>
+            </select>
+          </label>
+          <label class="query-field">
+            <span>Search Query</span>
+            <input id="search-query" type="text" placeholder="Find a phrase, term, or quoted fragment" />
+          </label>
+          <button id="run-search" class="primary-button">Search</button>
+        </div>
+      </section>
+
+      <main class="workspace">
+        <aside class="tree-panel">
+          <div class="panel-header">
+            <h2>Saved Chats</h2>
+            <div id="tree-summary" class="panel-meta"></div>
+          </div>
+          <div id="tree-root" class="tree-root"></div>
+        </aside>
+
+        <section class="results-panel">
+          <div class="panel-header">
+            <h2 id="results-title">Results</h2>
+            <div id="results-meta" class="panel-meta"></div>
+          </div>
+          <div id="results-root" class="results-root"></div>
+        </section>
+      </main>
+    </div>
+
+    <template id="thread-template">
+      <button class="tree-thread" type="button"></button>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+  </html>
+

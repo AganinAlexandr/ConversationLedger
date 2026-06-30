@@ -342,6 +342,66 @@ class LedgerIndex:
             )
         return self._group_rows_by_thread(rows)
 
+    def list_filter_values(self) -> dict[str, list[str]]:
+        with self.session() as connection:
+            return {
+                "projects": self._distinct_values(connection, "project_id"),
+                "platforms": self._distinct_values(connection, "platform"),
+                "source_products": self._distinct_values(connection, "source_product"),
+                "runtime_vendors": self._distinct_values(connection, "runtime_vendor"),
+                "source_surfaces": self._distinct_values(connection, "source_surface"),
+                "days": self._distinct_values(connection, "substr(timestamp_observed, 1, 10)", alias="day"),
+            }
+
+    def list_chat_tree(
+        self,
+        *,
+        project_id: str | None = None,
+        platform: str | None = None,
+        source_product: str | None = None,
+        runtime_vendor: str | None = None,
+        source_surface: str | None = None,
+    ) -> list[dict]:
+        with self.session() as connection:
+            where_clauses = ["1 = 1"]
+            parameters: list[object] = []
+            if project_id:
+                where_clauses.append("project_id = ?")
+                parameters.append(project_id)
+            if platform:
+                where_clauses.append("platform = ?")
+                parameters.append(platform)
+            if source_product:
+                where_clauses.append("source_product = ?")
+                parameters.append(source_product)
+            if runtime_vendor:
+                where_clauses.append("runtime_vendor = ?")
+                parameters.append(runtime_vendor)
+            if source_surface:
+                where_clauses.append("source_surface = ?")
+                parameters.append(source_surface)
+
+            rows = connection.execute(
+                f"""
+                SELECT
+                    project_id,
+                    platform,
+                    source_product,
+                    runtime_vendor,
+                    source_surface,
+                    thread_id,
+                    COUNT(*) AS message_count,
+                    MIN(timestamp_observed) AS started_at,
+                    MAX(timestamp_observed) AS ended_at
+                FROM events
+                WHERE {' AND '.join(where_clauses)}
+                GROUP BY project_id, platform, source_product, runtime_vendor, source_surface, thread_id
+                ORDER BY project_id, COALESCE(source_product, platform), started_at, thread_id
+                """,
+                parameters,
+            ).fetchall()
+        return self._build_chat_tree(rows)
+
     def search_events(
         self,
         query: str,
@@ -449,6 +509,78 @@ class LedgerIndex:
             """,
             parameters,
         ).fetchall()
+
+    def _distinct_values(
+        self,
+        connection: sqlite3.Connection,
+        expression: str,
+        *,
+        alias: str | None = None,
+    ) -> list[str]:
+        column_name = alias or expression
+        rows = connection.execute(
+            f"""
+            SELECT DISTINCT {expression} AS {column_name}
+            FROM events
+            WHERE {expression} IS NOT NULL AND {expression} != ''
+            ORDER BY {column_name}
+            """
+        ).fetchall()
+        return [str(row[column_name]) for row in rows]
+
+    def _build_chat_tree(self, rows: list[sqlite3.Row]) -> list[dict]:
+        projects: dict[str, dict] = {}
+        for row in rows:
+            project = projects.setdefault(
+                row["project_id"],
+                {
+                    "project_id": row["project_id"],
+                    "thread_count": 0,
+                    "products": {},
+                },
+            )
+            product_key = row["source_product"] or row["platform"]
+            product = project["products"].setdefault(
+                product_key,
+                {
+                    "source_product": row["source_product"],
+                    "platform": row["platform"],
+                    "runtime_vendor": row["runtime_vendor"],
+                    "source_surface": row["source_surface"],
+                    "thread_count": 0,
+                    "threads": [],
+                },
+            )
+            product["threads"].append(
+                {
+                    "thread_id": row["thread_id"],
+                    "message_count": row["message_count"],
+                    "started_at": row["started_at"],
+                    "ended_at": row["ended_at"],
+                    "platform": row["platform"],
+                    "source_product": row["source_product"],
+                    "runtime_vendor": row["runtime_vendor"],
+                    "source_surface": row["source_surface"],
+                }
+            )
+            product["thread_count"] += 1
+            project["thread_count"] += 1
+
+        result: list[dict] = []
+        for project_id in sorted(projects):
+            project = projects[project_id]
+            products = list(project["products"].values())
+            products.sort(key=lambda item: (item["source_product"] or item["platform"] or "", item["platform"] or ""))
+            for product in products:
+                product["threads"].sort(key=lambda item: (item["started_at"] or "", item["thread_id"]))
+            result.append(
+                {
+                    "project_id": project["project_id"],
+                    "thread_count": project["thread_count"],
+                    "products": products,
+                }
+            )
+        return result
 
     def _group_rows_by_thread(self, rows: list[sqlite3.Row]) -> list[dict]:
         grouped: dict[tuple[str, str, str, str | None, str | None, str | None], list[StoredEvent]] = {}

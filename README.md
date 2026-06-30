@@ -44,7 +44,8 @@ userscripts/
 2. Copy `.env.example` to `.env` and set a local token.
 3. Run `python -m conversation_ledger.cli init-storage`.
 4. Start the collector with `python -m conversation_ledger.cli run-collector`.
-5. Import saved files with `python -m conversation_ledger.cli scan-inbox --project your-project`.
+5. Start the local shell with `python -m conversation_ledger.cli run-shell`.
+6. Import saved files with `python -m conversation_ledger.cli scan-inbox --project your-project`.
 
 ## Environment
 
@@ -57,6 +58,8 @@ LEDGER_KNOWLEDGE_ROOT=E:/commons/knowledge/conversation_ledger
 OUTPUT_ROOT=E:/output/conversation-ledger
 COLLECTOR_HOST=127.0.0.1
 COLLECTOR_PORT=8765
+SHELL_HOST=127.0.0.1
+SHELL_PORT=8766
 COLLECTOR_TOKEN=replace-with-random-local-token
 ALLOW_PLATFORMS=codex,chatgpt,claude,claude_code,cursor,deepseek,gemini,import
 ALLOW_PROJECTS=
@@ -69,6 +72,7 @@ If `LEDGER_DATA_ROOT` is not set, the app defaults to `COMMONS_ROOT/data/convers
 ```text
 python -m conversation_ledger.cli init-storage
 python -m conversation_ledger.cli run-collector
+python -m conversation_ledger.cli run-shell
 python -m conversation_ledger.cli scan-inbox --project sorting-center
 python -m conversation_ledger.cli import-file --project sorting-center --path path/to/chat.md
 python -m conversation_ledger.cli export-thread --project sorting-center --platform import --thread chat-name
@@ -146,6 +150,24 @@ python -m conversation_ledger.cli search --scope family --family claude_code --s
 python -m conversation_ledger.cli thread-context --project conversation-ledger --thread abc123
 python -m conversation_ledger.cli day-context --project conversation-ledger --date 2026-06-30
 ```
+
+## Local shell
+
+The minimal viewer shell runs as a personal local web app on `SHELL_HOST:SHELL_PORT`. It is intended for your own archive inspection, not for multi-user operation. It provides:
+
+- a tree of saved chats grouped by project and source product
+- filters for family, product, vendor, and execution surface
+- full-text search in the same window
+- inline thread and day context rendering without leaving the shell
+- richer in-window formatting for markdown, lists, code blocks, tables, and highlighted search hits
+
+Start it with:
+
+```text
+python -m conversation_ledger.cli run-shell
+```
+
+Then open `http://127.0.0.1:8766/` or your configured shell address in a browser.
 
 ## Notes
 

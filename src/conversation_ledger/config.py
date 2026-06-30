@@ -32,6 +32,8 @@ class LedgerConfig:
     output_root: Path
     collector_host: str = "127.0.0.1"
     collector_port: int = 8765
+    shell_host: str = "127.0.0.1"
+    shell_port: int = 8766
     collector_token: str = ""
     allow_platforms: tuple[str, ...] = ALLOWED_PLATFORMS
     allow_projects: tuple[str, ...] = ()
@@ -99,6 +101,8 @@ class LedgerConfig:
             output_root=output_root,
             collector_host=os.environ.get("COLLECTOR_HOST", "127.0.0.1"),
             collector_port=int(os.environ.get("COLLECTOR_PORT", "8765")),
+            shell_host=os.environ.get("SHELL_HOST", "127.0.0.1"),
+            shell_port=int(os.environ.get("SHELL_PORT", "8766")),
             collector_token=os.environ.get("COLLECTOR_TOKEN", ""),
             allow_platforms=_split_csv(os.environ.get("ALLOW_PLATFORMS"))
             or ALLOWED_PLATFORMS,

@@ -9,6 +9,7 @@ from conversation_ledger.context import build_day_context, build_thread_context,
 from conversation_ledger.exporter import MarkdownExporter
 from conversation_ledger.importer import ImportWatcher
 from conversation_ledger.search import SearchRequest, render_search_payload, run_search
+from conversation_ledger.shell import LedgerShellService
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -17,6 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("init-storage", help="Create expected storage directories")
     subparsers.add_parser("run-collector", help="Run the local HTTP collector")
+    subparsers.add_parser("run-shell", help="Run the local shell UI for browsing archived chats")
 
     scan_parser = subparsers.add_parser("scan-inbox", help="Import supported files from the inbox")
     scan_parser.add_argument("--project", required=True, help="Project identifier")
@@ -90,6 +92,10 @@ def main() -> int:
 
     if args.command == "run-collector":
         CollectorService(config).run()
+        return 0
+
+    if args.command == "run-shell":
+        LedgerShellService(config).run()
         return 0
 
     if args.command == "scan-inbox":
