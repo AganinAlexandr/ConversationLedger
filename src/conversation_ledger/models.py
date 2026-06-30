@@ -3,10 +3,11 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from conversation_ledger.platforms import ALLOWED_PLATFORMS
 from conversation_ledger.utils import sha256_text
 
 SCHEMA_VERSION = "conversation_event_v0"
-ALLOWED_PLATFORMS = {"claude", "codex", "chatgpt", "deepseek", "gemini", "import"}
+ALLOWED_PLATFORMS = set(ALLOWED_PLATFORMS)
 ALLOWED_ROLES = {"user", "assistant", "system", "tool", "unknown"}
 ALLOWED_EVENT_TYPES = {"message_final", "message_revision", "import_record"}
 
@@ -23,7 +24,10 @@ class ConversationEvent:
     event_type: str
     content_markdown: str
     capture_adapter: str
+    source_product: str | None = None
     model_family: str | None = None
+    runtime_vendor: str | None = None
+    source_surface: str | None = None
     parent_message_id: str | None = None
     content_sha256: str | None = None
     attachment_refs: list[dict[str, Any]] = field(default_factory=list)
@@ -56,16 +60,19 @@ class ConversationEvent:
             event_id=payload["event_id"],
             project_id=payload["project_id"],
             platform=payload["platform"],
-            model_family=payload.get("model_family"),
+            source_product=payload.get("source_product"),
             thread_id=payload["thread_id"],
             message_id=payload["message_id"],
-            parent_message_id=payload.get("parent_message_id"),
             timestamp_observed=payload["timestamp_observed"],
             role=payload["role"],
             event_type=payload["event_type"],
             content_markdown=payload.get("content_markdown", ""),
+            capture_adapter=payload["capture_adapter"],
+            model_family=payload.get("model_family"),
+            runtime_vendor=payload.get("runtime_vendor"),
+            source_surface=payload.get("source_surface"),
+            parent_message_id=payload.get("parent_message_id"),
             content_sha256=payload.get("content_sha256"),
             attachment_refs=list(payload.get("attachment_refs", [])),
             source_url=payload.get("source_url"),
-            capture_adapter=payload["capture_adapter"],
         )

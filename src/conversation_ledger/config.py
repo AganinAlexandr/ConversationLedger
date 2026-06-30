@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from conversation_ledger.platforms import ALLOWED_PLATFORMS
+
 
 def _split_csv(value: str | None) -> tuple[str, ...]:
     if not value:
@@ -31,7 +33,7 @@ class LedgerConfig:
     collector_host: str = "127.0.0.1"
     collector_port: int = 8765
     collector_token: str = ""
-    allow_platforms: tuple[str, ...] = ("codex", "chatgpt", "claude", "deepseek", "gemini", "import")
+    allow_platforms: tuple[str, ...] = ALLOWED_PLATFORMS
     allow_projects: tuple[str, ...] = ()
 
     @property
@@ -99,6 +101,6 @@ class LedgerConfig:
             collector_port=int(os.environ.get("COLLECTOR_PORT", "8765")),
             collector_token=os.environ.get("COLLECTOR_TOKEN", ""),
             allow_platforms=_split_csv(os.environ.get("ALLOW_PLATFORMS"))
-            or ("codex", "chatgpt", "claude", "deepseek", "gemini", "import"),
+            or ALLOWED_PLATFORMS,
             allow_projects=_split_csv(os.environ.get("ALLOW_PROJECTS")),
         )

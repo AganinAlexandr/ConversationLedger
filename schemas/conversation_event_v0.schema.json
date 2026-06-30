@@ -24,9 +24,12 @@
     "project_id": { "type": "string", "minLength": 1 },
     "platform": {
       "type": "string",
-      "enum": ["claude", "codex", "chatgpt", "deepseek", "gemini", "import"]
+      "enum": ["claude", "claude_code", "codex", "chatgpt", "cursor", "deepseek", "gemini", "import"]
     },
+    "source_product": { "type": ["string", "null"] },
     "model_family": { "type": ["string", "null"] },
+    "runtime_vendor": { "type": ["string", "null"] },
+    "source_surface": { "type": ["string", "null"] },
     "thread_id": { "type": "string", "minLength": 1 },
     "message_id": { "type": "string", "minLength": 1 },
     "parent_message_id": { "type": ["string", "null"] },

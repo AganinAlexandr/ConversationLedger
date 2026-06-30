@@ -58,7 +58,7 @@ OUTPUT_ROOT=E:/output/conversation-ledger
 COLLECTOR_HOST=127.0.0.1
 COLLECTOR_PORT=8765
 COLLECTOR_TOKEN=replace-with-random-local-token
-ALLOW_PLATFORMS=codex,chatgpt,claude,deepseek,gemini,import
+ALLOW_PLATFORMS=codex,chatgpt,claude,claude_code,cursor,deepseek,gemini,import
 ALLOW_PROJECTS=
 ```
 
@@ -97,6 +97,53 @@ Suggested setup:
 3. Open the userscript file and install it in the manager.
 4. Use the script menu to set `project_id`, local collector URL, and bearer token.
 5. Open Codex or ChatGPT and verify that the status badge switches to `recording`.
+
+## Retrieval design
+
+The original MVP spec is strong on capture and export, but weaker on how a user later finds the right information inside saved conversations. That gap is now captured in [message-search-and-retrieval.md](/E:/Projects/OpenAI/ConversationLedger/docs/message-search-and-retrieval.md).
+
+The recommended next layer is:
+
+- SQLite FTS5 over saved messages
+- metadata filters by project/platform/date/thread
+- bounded message windows as results
+- CLI search and thread-context commands
+
+The first search interface is designed around four explicit source groups:
+
+1. `scope=all`: search across all saved data
+2. `scope=project`: search across chats inside one project
+3. `scope=family`: search across one platform family such as `Codex`, `ChatGPT`, `Claude Code`, `Cursor`, `Gemini`, or `DeepSeek`
+4. `scope=project-family`: search one platform family inside one chosen project
+
+Important nuance: for families like `Claude Code`, the archive should preserve not only the family but also the execution surface. In practice this means:
+
+- `platform=claude_code`
+- `source_surface=claude_web` for direct browser use at `https://claude.ai`
+- `source_surface=cursor_claude_code_plugin` for direct Claude Code use through the Cursor plugin
+
+So search can stay grouped by family when needed, while still retaining the exact capture origin for later refinement.
+
+Another important nuance: products that share a vendor ecosystem should still remain separately searchable. For example, `Codex` and `ChatGPT` may both sit in the OpenAI orbit, but they should remain distinct source products in the archive because the user may need search over one but not the other. The same principle applies to vendor-agnostic shells like `Cursor`, `Lovable`, or `OpenRouter`.
+
+The retrieval model is therefore moving toward separate fields for:
+
+- `platform`: the operational family used for high-level grouping
+- `source_product`: the concrete product the user interacted with
+- `runtime_vendor`: the underlying vendor lineage
+- `source_surface`: the shell or execution surface
+
+Example commands:
+
+```text
+python -m conversation_ledger.cli search --scope all --query "source of truth"
+python -m conversation_ledger.cli search --scope project --project conversation-ledger --query "collector"
+python -m conversation_ledger.cli search --scope family --family chatgpt --query "imports"
+python -m conversation_ledger.cli search --scope project-family --project conversation-ledger --family codex --query "userscript"
+python -m conversation_ledger.cli search --scope all --product codex --query "agent"
+python -m conversation_ledger.cli search --scope all --vendor openai --query "agent"
+python -m conversation_ledger.cli search --scope family --family claude_code --surface cursor_claude_code_plugin --query "plugin"
+```
 
 ## Notes
 

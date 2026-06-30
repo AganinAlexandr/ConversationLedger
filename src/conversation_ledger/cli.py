@@ -7,6 +7,7 @@ from conversation_ledger.collector import CollectorService
 from conversation_ledger.config import LedgerConfig
 from conversation_ledger.exporter import MarkdownExporter
 from conversation_ledger.importer import ImportWatcher
+from conversation_ledger.search import SearchRequest, render_search_payload, run_search
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -34,6 +35,28 @@ def build_parser() -> argparse.ArgumentParser:
     export_day.add_argument("--project", required=True)
     export_day.add_argument("--date", required=True, help="ISO date in YYYY-MM-DD format")
     export_day.add_argument("--output", type=Path)
+
+    search_parser = subparsers.add_parser("search", help="Search archived messages with explicit source grouping")
+    search_parser.add_argument("--query", required=True, help="Word, phrase, or FTS expression to search for")
+    search_parser.add_argument(
+        "--scope",
+        required=True,
+        choices=("all", "project", "family", "project-family"),
+        help="Choose the source group for the search",
+    )
+    search_parser.add_argument("--project", help="Project identifier for scope=project or scope=project-family")
+    search_parser.add_argument(
+        "--family",
+        help="Platform family such as codex, chatgpt, claude_code, cursor, gemini, or deepseek",
+    )
+    search_parser.add_argument("--product", help="Concrete source product such as codex, chatgpt, cursor, lovable")
+    search_parser.add_argument("--vendor", help="Runtime vendor such as openai, anthropic, google, deepseek")
+    search_parser.add_argument(
+        "--surface",
+        help="Execution surface such as browser_web, cursor_plugin, cursor_native_picker, api_router",
+    )
+    search_parser.add_argument("--limit", type=int, default=5, help="Maximum number of hits to return")
+    search_parser.add_argument("--window", type=int, default=1, help="Messages before/after the hit to include")
 
     return parser
 
@@ -81,6 +104,21 @@ def main() -> int:
         print(result.output_path)
         return 0
 
+    if args.command == "search":
+        request = SearchRequest(
+            query=args.query,
+            scope=args.scope,
+            project_id=args.project,
+            platform_family=args.family,
+            source_product=args.product,
+            runtime_vendor=args.vendor,
+            source_surface=args.surface,
+            limit=args.limit,
+            window=args.window,
+        )
+        payload = run_search(MarkdownExporter(config).index, request)
+        print(render_search_payload(payload))
+        return 0
+
     parser.error(f"Unsupported command: {args.command}")
     return 2
-
