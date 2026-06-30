@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "conversation_event_v0.schema.json",
+  "title": "Conversation Event v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "event_id",
+    "project_id",
+    "platform",
+    "thread_id",
+    "message_id",
+    "timestamp_observed",
+    "role",
+    "event_type",
+    "content_markdown",
+    "content_sha256",
+    "attachment_refs",
+    "capture_adapter"
+  ],
+  "properties": {
+    "schema_version": { "const": "conversation_event_v0" },
+    "event_id": { "type": "string", "minLength": 1 },
+    "project_id": { "type": "string", "minLength": 1 },
+    "platform": {
+      "type": "string",
+      "enum": ["claude", "codex", "deepseek", "gemini", "import"]
+    },
+    "model_family": { "type": ["string", "null"] },
+    "thread_id": { "type": "string", "minLength": 1 },
+    "message_id": { "type": "string", "minLength": 1 },
+    "parent_message_id": { "type": ["string", "null"] },
+    "timestamp_observed": { "type": "string", "format": "date-time" },
+    "role": {
+      "type": "string",
+      "enum": ["user", "assistant", "system", "tool", "unknown"]
+    },
+    "event_type": {
+      "type": "string",
+      "enum": ["message_final", "message_revision", "import_record"]
+    },
+    "content_markdown": { "type": "string" },
+    "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "attachment_refs": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "source_url": { "type": ["string", "null"] },
+    "capture_adapter": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": true
+}
+
