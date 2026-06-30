@@ -31,7 +31,7 @@ class LedgerConfig:
     collector_host: str = "127.0.0.1"
     collector_port: int = 8765
     collector_token: str = ""
-    allow_platforms: tuple[str, ...] = ("codex", "claude", "deepseek", "gemini", "import")
+    allow_platforms: tuple[str, ...] = ("codex", "chatgpt", "claude", "deepseek", "gemini", "import")
     allow_projects: tuple[str, ...] = ()
 
     @property
@@ -99,7 +99,6 @@ class LedgerConfig:
             collector_port=int(os.environ.get("COLLECTOR_PORT", "8765")),
             collector_token=os.environ.get("COLLECTOR_TOKEN", ""),
             allow_platforms=_split_csv(os.environ.get("ALLOW_PLATFORMS"))
-            or ("codex", "claude", "deepseek", "gemini", "import"),
+            or ("codex", "chatgpt", "claude", "deepseek", "gemini", "import"),
             allow_projects=_split_csv(os.environ.get("ALLOW_PROJECTS")),
         )
-

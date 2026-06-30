@@ -13,6 +13,7 @@ The implementation follows the storage split described in [E:\commons\project_in
 
 - Local collector bound to `127.0.0.1`
 - Bearer token authentication from `.env`
+- Browser adapter userscript for Codex and ChatGPT
 - Append-only JSONL raw storage
 - Deduplication by `event_id` and stable content identity
 - Idempotent import of `.txt`, `.md`, `.html`, `.json`
@@ -34,6 +35,7 @@ src/conversation_ledger/
   storage.py
 tests/
 schemas/
+userscripts/
 ```
 
 ## Quick start
@@ -56,7 +58,7 @@ OUTPUT_ROOT=E:/output/conversation-ledger
 COLLECTOR_HOST=127.0.0.1
 COLLECTOR_PORT=8765
 COLLECTOR_TOKEN=replace-with-random-local-token
-ALLOW_PLATFORMS=codex,claude,deepseek,gemini,import
+ALLOW_PLATFORMS=codex,chatgpt,claude,deepseek,gemini,import
 ALLOW_PROJECTS=
 ```
 
@@ -73,9 +75,32 @@ python -m conversation_ledger.cli export-thread --project sorting-center --platf
 python -m conversation_ledger.cli export-day --project sorting-center --date 2026-06-30
 ```
 
+## Browser adapter
+
+The first browser adapter lives in [userscripts/conversation-ledger-openai.user.js](/E:/Projects/OpenAI/ConversationLedger/userscripts/conversation-ledger-openai.user.js). It is a Tampermonkey-compatible userscript with two profiles:
+
+- `Codex`: `codex.openai.com` and `chatgpt.com/codex*`
+- `ChatGPT`: `chatgpt.com/*` and `chat.openai.com/*`
+
+What it does:
+
+- observes rendered conversation turns only, not composer input before send
+- shows a floating `recording / paused / error` badge
+- lets you pause capture locally
+- sends events only to the local collector on `127.0.0.1`
+- emits `message_final` and `message_revision`
+
+Suggested setup:
+
+1. Install Tampermonkey or a similar userscript manager.
+2. Start the local collector.
+3. Open the userscript file and install it in the manager.
+4. Use the script menu to set `project_id`, local collector URL, and bearer token.
+5. Open Codex or ChatGPT and verify that the status badge switches to `recording`.
+
 ## Notes
 
 - Raw JSONL and SQLite stay outside git by default.
 - SQLite is an index and convenience cache, not the source of truth.
 - The current importer normalizes manual files into `import_record` events. Platform-specific browser adapters can post richer `message_final` and `message_revision` events to the collector later.
-
+- `https://chatgpt.com/codex` redirected to `https://chatgpt.com/` in the unauthenticated browser session I could inspect, so the Codex profile is implemented as a strong first-pass adapter and should be smoke-tested in an authenticated session.

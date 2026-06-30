@@ -24,7 +24,7 @@
     "project_id": { "type": "string", "minLength": 1 },
     "platform": {
       "type": "string",
-      "enum": ["claude", "codex", "deepseek", "gemini", "import"]
+      "enum": ["claude", "codex", "chatgpt", "deepseek", "gemini", "import"]
     },
     "model_family": { "type": ["string", "null"] },
     "thread_id": { "type": "string", "minLength": 1 },
@@ -50,4 +50,3 @@
   },
   "additionalProperties": true
 }
-

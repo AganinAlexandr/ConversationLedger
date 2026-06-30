@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Any
 
 from conversation_ledger.config import LedgerConfig
 from conversation_ledger.index import LedgerIndex
@@ -18,8 +19,11 @@ class CollectorService:
         self.store = AppendOnlyRawStore(config.raw_root, self.index)
         self.paused = False
 
+    def make_server(self) -> ThreadingHTTPServer:
+        return ThreadingHTTPServer((self.config.collector_host, self.config.collector_port), self._handler())
+
     def run(self) -> None:
-        server = ThreadingHTTPServer((self.config.collector_host, self.config.collector_port), self._handler())
+        server = self.make_server()
         server.serve_forever()
 
     def _handler(self) -> type[BaseHTTPRequestHandler]:
@@ -28,13 +32,24 @@ class CollectorService:
         class RequestHandler(BaseHTTPRequestHandler):
             server_version = "ConversationLedger/0.1.0"
 
+            def do_OPTIONS(self) -> None:
+                self.send_response(HTTPStatus.NO_CONTENT)
+                self._send_cors_headers()
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+
             def do_GET(self) -> None:
                 if self.path != "/health":
                     self._send_json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
                     return
                 self._send_json(
                     HTTPStatus.OK,
-                    {"status": "paused" if service.paused else "recording"},
+                    {
+                        "status": "paused" if service.paused else "recording",
+                        "host": service.config.collector_host,
+                        "port": service.config.collector_port,
+                        "allow_platforms": list(service.config.allow_platforms),
+                    },
                 )
 
             def do_POST(self) -> None:
@@ -104,7 +119,7 @@ class CollectorService:
                     return False
                 return True
 
-            def _read_json(self) -> dict | list:
+            def _read_json(self) -> dict[str, Any] | list[dict[str, Any]]:
                 content_length = int(self.headers.get("Content-Length", "0"))
                 payload = self.rfile.read(content_length)
                 return json.loads(payload.decode("utf-8"))
@@ -112,10 +127,17 @@ class CollectorService:
             def _send_json(self, status: HTTPStatus, payload: dict) -> None:
                 body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
                 self.send_response(status)
+                self._send_cors_headers()
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
+
+            def _send_cors_headers(self) -> None:
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+                self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                self.send_header("Cache-Control", "no-store")
 
             def log_message(self, format: str, *args: object) -> None:
                 return

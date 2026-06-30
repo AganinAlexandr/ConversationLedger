@@ -6,7 +6,7 @@ from typing import Any
 from conversation_ledger.utils import sha256_text
 
 SCHEMA_VERSION = "conversation_event_v0"
-ALLOWED_PLATFORMS = {"claude", "codex", "deepseek", "gemini", "import"}
+ALLOWED_PLATFORMS = {"claude", "codex", "chatgpt", "deepseek", "gemini", "import"}
 ALLOWED_ROLES = {"user", "assistant", "system", "tool", "unknown"}
 ALLOWED_EVENT_TYPES = {"message_final", "message_revision", "import_record"}
 
@@ -69,4 +69,3 @@ class ConversationEvent:
             source_url=payload.get("source_url"),
             capture_adapter=payload["capture_adapter"],
         )
-
