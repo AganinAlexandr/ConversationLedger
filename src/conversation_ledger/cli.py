@@ -5,6 +5,7 @@ from pathlib import Path
 
 from conversation_ledger.collector import CollectorService
 from conversation_ledger.config import LedgerConfig
+from conversation_ledger.context import build_day_context, build_thread_context, render_context_payload
 from conversation_ledger.exporter import MarkdownExporter
 from conversation_ledger.importer import ImportWatcher
 from conversation_ledger.search import SearchRequest, render_search_payload, run_search
@@ -57,6 +58,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     search_parser.add_argument("--limit", type=int, default=5, help="Maximum number of hits to return")
     search_parser.add_argument("--window", type=int, default=1, help="Messages before/after the hit to include")
+
+    thread_context = subparsers.add_parser("thread-context", help="Return grouped evidence for one thread")
+    thread_context.add_argument("--project", required=True)
+    thread_context.add_argument("--thread", required=True)
+    thread_context.add_argument("--family")
+    thread_context.add_argument("--product")
+    thread_context.add_argument("--vendor")
+    thread_context.add_argument("--surface")
+
+    day_context = subparsers.add_parser("day-context", help="Return grouped evidence for one project day")
+    day_context.add_argument("--project", required=True)
+    day_context.add_argument("--date", required=True, help="ISO date in YYYY-MM-DD format")
+    day_context.add_argument("--family")
+    day_context.add_argument("--product")
+    day_context.add_argument("--vendor")
+    day_context.add_argument("--surface")
 
     return parser
 
@@ -118,6 +135,32 @@ def main() -> int:
         )
         payload = run_search(MarkdownExporter(config).index, request)
         print(render_search_payload(payload))
+        return 0
+
+    if args.command == "thread-context":
+        payload = build_thread_context(
+            MarkdownExporter(config).index,
+            project_id=args.project,
+            thread_id=args.thread,
+            platform_family=args.family,
+            source_product=args.product,
+            runtime_vendor=args.vendor,
+            source_surface=args.surface,
+        )
+        print(render_context_payload(payload))
+        return 0
+
+    if args.command == "day-context":
+        payload = build_day_context(
+            MarkdownExporter(config).index,
+            project_id=args.project,
+            iso_date=args.date,
+            platform_family=args.family,
+            source_product=args.product,
+            runtime_vendor=args.vendor,
+            source_surface=args.surface,
+        )
+        print(render_context_payload(payload))
         return 0
 
     parser.error(f"Unsupported command: {args.command}")

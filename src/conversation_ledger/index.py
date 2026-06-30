@@ -286,6 +286,62 @@ class LedgerIndex:
             ).fetchall()
         return [self._row_to_stored_event(row) for row in rows]
 
+    def fetch_thread_contexts(
+        self,
+        *,
+        project_id: str,
+        thread_id: str,
+        platform: str | None = None,
+        source_product: str | None = None,
+        runtime_vendor: str | None = None,
+        source_surface: str | None = None,
+    ) -> list[dict]:
+        with self.session() as connection:
+            rows = self._fetch_filtered_rows(
+                connection,
+                where_clauses=[
+                    "project_id = ?",
+                    "thread_id = ?",
+                ],
+                parameters=[
+                    project_id,
+                    thread_id,
+                ],
+                platform=platform,
+                source_product=source_product,
+                runtime_vendor=runtime_vendor,
+                source_surface=source_surface,
+            )
+        return self._group_rows_by_thread(rows)
+
+    def fetch_day_contexts(
+        self,
+        *,
+        project_id: str,
+        iso_date: str,
+        platform: str | None = None,
+        source_product: str | None = None,
+        runtime_vendor: str | None = None,
+        source_surface: str | None = None,
+    ) -> list[dict]:
+        with self.session() as connection:
+            rows = self._fetch_filtered_rows(
+                connection,
+                where_clauses=[
+                    "project_id = ?",
+                    "substr(timestamp_observed, 1, 10) = ?",
+                ],
+                parameters=[
+                    project_id,
+                    iso_date,
+                ],
+                platform=platform,
+                source_product=source_product,
+                runtime_vendor=runtime_vendor,
+                source_surface=source_surface,
+            )
+        return self._group_rows_by_thread(rows)
+
     def search_events(
         self,
         query: str,
@@ -360,6 +416,78 @@ class LedgerIndex:
                     )
                 )
             return results
+
+    def _fetch_filtered_rows(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        where_clauses: list[str],
+        parameters: list[object],
+        platform: str | None = None,
+        source_product: str | None = None,
+        runtime_vendor: str | None = None,
+        source_surface: str | None = None,
+    ) -> list[sqlite3.Row]:
+        if platform:
+            where_clauses.append("platform = ?")
+            parameters.append(platform)
+        if source_product:
+            where_clauses.append("source_product = ?")
+            parameters.append(source_product)
+        if runtime_vendor:
+            where_clauses.append("runtime_vendor = ?")
+            parameters.append(runtime_vendor)
+        if source_surface:
+            where_clauses.append("source_surface = ?")
+            parameters.append(source_surface)
+        return connection.execute(
+            f"""
+            SELECT *
+            FROM events
+            WHERE {' AND '.join(where_clauses)}
+            ORDER BY timestamp_observed, event_id
+            """,
+            parameters,
+        ).fetchall()
+
+    def _group_rows_by_thread(self, rows: list[sqlite3.Row]) -> list[dict]:
+        grouped: dict[tuple[str, str, str, str | None, str | None, str | None], list[StoredEvent]] = {}
+        for row in rows:
+            key = (
+                row["project_id"],
+                row["platform"],
+                row["thread_id"],
+                row["source_product"] if "source_product" in row.keys() else None,
+                row["runtime_vendor"] if "runtime_vendor" in row.keys() else None,
+                row["source_surface"] if "source_surface" in row.keys() else None,
+            )
+            grouped.setdefault(key, []).append(self._row_to_stored_event(row))
+
+        groups: list[dict] = []
+        for (
+            project_id,
+            platform,
+            thread_id,
+            source_product,
+            runtime_vendor,
+            source_surface,
+        ), events in grouped.items():
+            groups.append(
+                {
+                    "project_id": project_id,
+                    "platform": platform,
+                    "source_product": source_product,
+                    "runtime_vendor": runtime_vendor,
+                    "source_surface": source_surface,
+                    "thread_id": thread_id,
+                    "message_count": len(events),
+                    "started_at": events[0].event.timestamp_observed if events else None,
+                    "ended_at": events[-1].event.timestamp_observed if events else None,
+                    "events": events,
+                }
+            )
+        groups.sort(key=lambda item: (item["started_at"] or "", item["thread_id"]))
+        return groups
 
     def _row_to_stored_event(self, row: sqlite3.Row) -> StoredEvent:
         event = ConversationEvent(

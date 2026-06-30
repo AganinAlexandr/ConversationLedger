@@ -143,6 +143,8 @@ python -m conversation_ledger.cli search --scope project-family --project conver
 python -m conversation_ledger.cli search --scope all --product codex --query "agent"
 python -m conversation_ledger.cli search --scope all --vendor openai --query "agent"
 python -m conversation_ledger.cli search --scope family --family claude_code --surface cursor_claude_code_plugin --query "plugin"
+python -m conversation_ledger.cli thread-context --project conversation-ledger --thread abc123
+python -m conversation_ledger.cli day-context --project conversation-ledger --date 2026-06-30
 ```
 
 ## Notes
