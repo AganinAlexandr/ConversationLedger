@@ -42,10 +42,10 @@ userscripts/
 
 1. Create a virtual environment and activate it.
 2. Copy `.env.example` to `.env` and set a local token.
-3. Run `python -m conversation_ledger.cli init-storage`.
-4. Start the collector with `python -m conversation_ledger.cli run-collector`.
-5. Start the local shell with `python -m conversation_ledger.cli run-shell`.
-6. Import saved files with `python -m conversation_ledger.cli scan-inbox --project your-project`.
+3. Run `python -m conversation_ledger init-storage`.
+4. Start the collector with `python -m conversation_ledger run-collector`.
+5. Start the local shell with `python -m conversation_ledger run-shell`.
+6. Import saved files with `python -m conversation_ledger scan-inbox --project your-project`.
 
 ## Environment
 
@@ -70,13 +70,13 @@ If `LEDGER_DATA_ROOT` is not set, the app defaults to `COMMONS_ROOT/data/convers
 ## Commands
 
 ```text
-python -m conversation_ledger.cli init-storage
-python -m conversation_ledger.cli run-collector
-python -m conversation_ledger.cli run-shell
-python -m conversation_ledger.cli scan-inbox --project sorting-center
-python -m conversation_ledger.cli import-file --project sorting-center --path path/to/chat.md
-python -m conversation_ledger.cli export-thread --project sorting-center --platform import --thread chat-name
-python -m conversation_ledger.cli export-day --project sorting-center --date 2026-06-30
+python -m conversation_ledger init-storage
+python -m conversation_ledger run-collector
+python -m conversation_ledger run-shell
+python -m conversation_ledger scan-inbox --project sorting-center
+python -m conversation_ledger import-file --project sorting-center --path path/to/chat.md
+python -m conversation_ledger export-thread --project sorting-center --platform import --thread chat-name
+python -m conversation_ledger export-day --project sorting-center --date 2026-06-30
 ```
 
 ## Browser adapter
