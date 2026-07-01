@@ -48,6 +48,14 @@ userscripts/
 5. Start the local shell with `python -m conversation_ledger run-shell`.
 6. Import saved files with `python -m conversation_ledger scan-inbox --project your-project`.
 
+For a one-shot local startup on Windows, you can also run:
+
+```text
+powershell -ExecutionPolicy Bypass -File .\start_conversation_ledger.ps1
+```
+
+This launcher checks the configured collector and shell ports, starts missing servers in separate PowerShell windows, and opens the shell UI in a browser by default.
+
 ## Environment
 
 The code reads configuration from environment variables and supports the project conventions from `E:\commons`:
