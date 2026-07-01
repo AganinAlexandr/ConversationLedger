@@ -14,6 +14,7 @@ The implementation follows the storage split described in [E:\commons\project_in
 - Local collector bound to `127.0.0.1`
 - Bearer token authentication from `.env`
 - Browser adapter userscript for Codex and ChatGPT
+- Codex thread snapshot import for Codex-native chat history
 - Append-only JSONL raw storage
 - Deduplication by `event_id` and stable content identity
 - Idempotent import of `.txt`, `.md`, `.html`, `.json`
@@ -75,8 +76,23 @@ python -m conversation_ledger run-collector
 python -m conversation_ledger run-shell
 python -m conversation_ledger scan-inbox --project sorting-center
 python -m conversation_ledger import-file --project sorting-center --path path/to/chat.md
+python -m conversation_ledger import-codex-thread --project sorting-center --path path/to/codex-thread.json
 python -m conversation_ledger export-thread --project sorting-center --platform import --thread chat-name
 python -m conversation_ledger export-day --project sorting-center --date 2026-06-30
+```
+
+## Codex thread snapshots
+
+For Codex-native history, the first bridge is a snapshot import path rather than a browser userscript. It accepts JSON shaped like a Codex thread history response and converts `turns/items` into archive events:
+
+- `userMessage` -> `message_final`
+- `agentMessage` from completed turns -> `message_final`
+- `agentMessage` from in-progress turns -> `message_revision`
+
+Use:
+
+```text
+python -m conversation_ledger import-codex-thread --project sorting-center --path path/to/codex-thread.json
 ```
 
 ## Browser adapter

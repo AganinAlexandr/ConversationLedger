@@ -28,6 +28,14 @@ def build_parser() -> argparse.ArgumentParser:
     import_parser.add_argument("--path", required=True, type=Path, help="Path to the source file")
     import_parser.add_argument("--thread", help="Optional thread identifier override")
 
+    codex_parser = subparsers.add_parser(
+        "import-codex-thread",
+        help="Import a Codex thread snapshot exported from thread history",
+    )
+    codex_parser.add_argument("--project", required=True, help="Project identifier")
+    codex_parser.add_argument("--path", required=True, type=Path, help="Path to the Codex thread snapshot JSON")
+    codex_parser.add_argument("--thread", help="Optional thread identifier override")
+
     export_thread = subparsers.add_parser("export-thread", help="Export a thread to Markdown")
     export_thread.add_argument("--project", required=True)
     export_thread.add_argument("--platform", required=True)
@@ -106,6 +114,25 @@ def main() -> int:
     if args.command == "import-file":
         result = ImportWatcher(config).import_file(path=args.path, project_id=args.project, thread_id=args.thread)
         print(f"imported={result.imported} duplicate={result.duplicate} event_id={result.event_id}")
+        return 0
+
+    if args.command == "import-codex-thread":
+        result = ImportWatcher(config).import_codex_thread_snapshot(
+            path=args.path,
+            project_id=args.project,
+            thread_id=args.thread,
+        )
+        print(
+            " ".join(
+                [
+                    f"imported={result.imported}",
+                    f"duplicate={result.duplicate}",
+                    f"events={result.event_count}",
+                    f"accepted={result.imported_count}",
+                    f"event_id={result.event_id}",
+                ]
+            )
+        )
         return 0
 
     if args.command == "export-thread":
