@@ -118,7 +118,7 @@ class ImportWatcher:
     ) -> ImportResult:
         data = path.read_bytes()
         import_sha = sha256_bytes(data)
-        snapshot = json.loads(data.decode("utf-8"))
+        snapshot = json.loads(data.decode("utf-8-sig"))
         snapshot_thread = snapshot.get("thread", {})
         resolved_thread_id = safe_thread_id(thread_id or str(snapshot_thread.get("id") or path.stem))
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from conversation_ledger.collector import CollectorService
@@ -10,6 +11,13 @@ from conversation_ledger.exporter import MarkdownExporter
 from conversation_ledger.importer import ImportWatcher
 from conversation_ledger.search import SearchRequest, render_search_payload, run_search
 from conversation_ledger.shell import LedgerShellService
+
+
+def _configure_stdio() -> None:
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if stream is not None and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -89,6 +97,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    _configure_stdio()
     parser = build_parser()
     args = parser.parse_args()
     config = LedgerConfig.from_env(repo_root=Path.cwd())
